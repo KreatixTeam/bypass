@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>bypass</title>
+<style>
+  :root { color-scheme: dark; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; background:#000; color:#e8e8e8;
+    font:14px/1.5 -apple-system, 'SF Mono', ui-monospace, Menlo, monospace; }
+  body { display:flex; align-items:center; justify-content:center; padding:24px; }
+  main { width:100%; max-width:680px; }
+  h1 { font-size:20px; font-weight:600; letter-spacing:-.02em; margin-bottom:4px; }
+  .sub { color:#555; font-size:12px; margin-bottom:28px; }
+  form { display:flex; gap:8px; }
+  input[type=text] {
+    flex:1; background:#0a0a0a; border:1px solid #222; border-radius:10px;
+    padding:14px 16px; font-size:16px; color:#e8e8e8; outline:none;
+    transition:border-color .18s ease;
+    -webkit-appearance:none; appearance:none;
+  }
+  input[type=text]:focus { border-color:#444; }
+  input[type=text]::placeholder { color:#3a3a3a; }
+  button {
+    background:#e8e8e8; color:#000; border:none; border-radius:10px;
+    padding:14px 22px; font-size:15px; font-weight:600; cursor:pointer;
+    font-family:inherit; transition:opacity .18s ease, transform .18s ease;
+    -webkit-appearance:none; appearance:none;
+  }
+  button:hover { opacity:.85; }
+  button:active { transform:scale(.97); }
+  button[disabled] { opacity:.35; cursor:default; transform:none; }
+  #out { margin-top:24px; display:none; }
+  .card {
+    background:#0a0a0a; border:1px solid #1c1c1c; border-radius:12px; padding:18px;
+    animation:enter .35s cubic-bezier(.2,.9,.25,1) both;
+  }
+  @keyframes enter { from { opacity:0; transform:translateY(6px) scale(.99); } }
+  .label { font-size:11px; color:#555; text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; }
+  #dest {
+    font-size:13px; word-break:break-all; color:#7dd88a; display:block;
+    animation:enter .35s cubic-bezier(.2,.9,.25,1) both;
+  }
+  #dest.err { color:#e06c5c; }
+  #meta { margin-top:10px; font-size:11px; color:#444; }
+  .row { display:flex; gap:8px; margin-top:12px; }
+  .ghost {
+    background:#161616; color:#ccc; border:1px solid #262626; border-radius:8px;
+    padding:7px 14px; font-size:12px; font-weight:500;
+  }
+  .ghost:hover { background:#1d1d1d; opacity:1; }
+  .spin { display:inline-block; width:12px; height:12px; border:2px solid #333;
+    border-top-color:#999; border-radius:50%; animation:sp .7s linear infinite;
+    vertical-align:-2px; margin-right:8px; }
+  @keyframes sp { to { transform:rotate(360deg); } }
+  #hosts { margin-top:32px; font-size:10px; color:#2e2e2e; line-height:1.9; }
+</style>
+</head>
+<body>
+<main>
+  <h1>bypass</h1>
+  <div class="sub">linkvertise · lootlabs · work.ink · sub2unlock · rekonise · boost.ink · pastes · shorteners</div>
+  <form id="f" autocomplete="off">
+    <input type="text" id="u" placeholder="paste a protected link" spellcheck="false" autofocus>
+    <button id="b" type="submit">crack</button>
+  </form>
+  <div id="out"><div class="card">
+    <div class="label">destination</div>
+    <a id="dest" href="#" target="_blank" rel="noopener"></a>
+    <div id="meta"></div>
+    <div class="row">
+      <button class="ghost" id="copy" type="button">copy</button>
+      <button class="ghost" id="open" type="button">open</button>
+    </div>
+  </div></div>
+  <div id="hosts">also: sub2unlock.net · sub4unlock · sub2get · subfinal · unlocknow · ytsubme · social-unlock · socialwolvez · mboost · adfoc.us · cuty.io · paster.so/.gg · justpaste · pastebin · rentry · paste-drop · pastecanyon · pastehill · pastemode · bit.ly · tinyurl · t.co · is.gd · v.gd · tiny.cc · t.ly · rebrand.ly · rkns.link · shorter.me · cl.gy · tinylink.onl</div>
+</main>
+<script>
+const f = document.getElementById('f'), u = document.getElementById('u'),
+      b = document.getElementById('b'), out = document.getElementById('out'),
+      dest = document.getElementById('dest'), meta = document.getElementById('meta');
+let last = null;
+f.onsubmit = async e => {
+  e.preventDefault();
+  const url = u.value.trim(); if (!url) return;
+  b.disabled = true;
+  out.style.display = 'block';
+  dest.className = ''; dest.removeAttribute('href');
+  dest.innerHTML = '<span class="spin"></span>cracking…'; meta.textContent = '';
+  try {
+    const r = await fetch('/api/bypass', {method:'POST',
+      headers:{'Content-Type':'application/json'}, body:JSON.stringify({url})});
+    const j = await r.json();
+    if (j.ok) {
+      last = j.destination;
+      dest.textContent = j.destination; dest.href = j.destination;
+      meta.textContent = j.ms + 'ms';
+    } else {
+      last = null;
+      dest.className = 'err'; dest.textContent = 'failed: ' + (j.error || 'unknown');
+      meta.textContent = j.ms + 'ms';
+    }
+  } catch (err) {
+    last = null; dest.className = 'err'; dest.textContent = 'failed: ' + err.message;
+  }
+  b.disabled = false;
+};
+document.getElementById('copy').onclick = () => last && navigator.clipboard.writeText(last);
+document.getElementById('open').onclick = () => last && window.open(last, '_blank');
+</script>
+</body>
+</html>
