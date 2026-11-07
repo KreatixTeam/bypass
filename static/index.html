@@ -9,40 +9,55 @@
 <link href="https://cdn.jsdelivr.net/npm/vuetify@3.10.9/dist/vuetify.min.css" rel="stylesheet">
 <style>
   html, body, .v-application { background:#000 !important; }
-  .dest { font-family:ui-monospace, Menlo, monospace; font-size:13px; word-break:break-all; }
+  .dest { font-family:ui-monospace, Menlo, monospace; font-size:13px; }
+
+  /* fields must read as fields on oled black */
+  .v-field--variant-outlined { background:#0e0e0e; }
+  .v-field--variant-outlined .v-field__outline__start,
+  .v-field--variant-outlined .v-field__outline__end,
+  .v-field--variant-outlined .v-field__outline__notch { border-color:#3a3a3a !important; }
+  .v-field--variant-outlined:hover .v-field__outline__start,
+  .v-field--variant-outlined:hover .v-field__outline__end,
+  .v-field--variant-outlined:hover .v-field__outline__notch { border-color:#565656 !important; }
+  .v-field--variant-outlined.v-field--focused .v-field__outline__start,
+  .v-field--variant-outlined.v-field--focused .v-field__outline__end,
+  .v-field--variant-outlined.v-field--focused .v-field__outline__notch {
+    border-color:#4caf50 !important; border-width:2px;
+  }
+  .v-label.v-field-label { color:#9a9a9a !important; }
+  .v-field input { font-size:16px; color:#eee; }
+  .v-field__input::placeholder, .v-field input::placeholder { color:#666 !important; opacity:1; }
+  .v-icon { color:#9a9a9a; }
 </style>
 </head>
 <body>
 <div id="app">
   <v-app>
-    <v-app-bar flat density="compact" color="#000" style="border-bottom:1px solid #1c1c1c">
+    <v-app-bar flat density="comfortable" color="#000" style="border-bottom:1px solid #1e1e1e">
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
       <v-app-bar-title class="text-body-1 font-weight-medium">Link Bypasser</v-app-bar-title>
       <v-spacer></v-spacer>
-      <v-tooltip text="API docs" location="bottom">
-        <template v-slot:activator="{ props }">
-          <v-btn v-bind="props" icon="mdi-code-json" variant="text" density="comfortable" href="/docs" target="_blank"></v-btn>
-        </template>
-      </v-tooltip>
-      <v-tooltip text="GitHub" location="bottom">
-        <template v-slot:activator="{ props }">
-          <v-btn v-bind="props" icon="mdi-github" variant="text" density="comfortable" href="https://github.com/KreatixTeam/bypass" target="_blank"></v-btn>
-        </template>
-      </v-tooltip>
+      <v-btn icon="mdi-code-json" variant="text" density="comfortable" href="/docs" target="_blank" aria-label="API docs"></v-btn>
+      <v-btn icon="mdi-github" variant="text" density="comfortable" href="https://github.com/KreatixTeam/bypass" target="_blank" aria-label="GitHub"></v-btn>
     </v-app-bar>
 
-    <v-navigation-drawer v-model="drawer" temporary color="#0a0a0a">
-      <v-list density="compact" nav>
-        <v-list-subheader style="color:#555">SUPPORTED</v-list-subheader>
-        <v-list-item v-for="g in groups" :key="g.t" :title="g.t" :subtitle="g.s" style="--v-list-subtitle-color:#3a3a3a"></v-list-item>
+    <v-navigation-drawer v-model="drawer" temporary color="#0d0d0d" style="border-right:1px solid #1e1e1e">
+      <v-list density="compact" nav bg-color="transparent">
+        <v-list-subheader style="color:#777">SUPPORTED</v-list-subheader>
+        <v-list-item v-for="g in groups" :key="g.t" :title="g.t" :subtitle="g.s"
+                     style="--v-list-subtitle-color:#555"></v-list-item>
       </v-list>
     </v-navigation-drawer>
 
     <v-main>
-      <v-container style="max-width:860px">
-        <v-breadcrumbs :items="[{title:'kreatix', href:'https://kreatix.dev'}, {title:'bypass'}]" class="pl-0 text-caption" style="color:#555"></v-breadcrumbs>
+      <v-container style="max-width:820px" class="py-6">
+        <v-breadcrumbs :items="[{title:'kreatix', href:'https://kreatix.dev'}, {title:'bypass', disabled:true}]"
+                       class="pl-0 py-0 mb-4 text-caption" style="color:#777"></v-breadcrumbs>
 
-        <v-card variant="outlined" color="#0a0a0a" style="border-color:#1c1c1c; border-radius:12px">
+        <v-card color="#101010" style="border:1px solid #2a2a2a; border-radius:12px" flat>
+          <v-card-title class="text-subtitle-1 font-weight-medium pt-5 px-5">Crack a protected link</v-card-title>
+          <v-card-subtitle class="px-5 pb-0" style="color:#777">skips ads, timers and social-unlock walls</v-card-subtitle>
+
           <v-card-text class="pa-5">
             <v-text-field
               v-model="url"
@@ -55,11 +70,10 @@
               spellcheck="false"
               autocomplete="off"
               prepend-inner-icon="mdi-link-variant"
-              :error-messages="errMsg"
             >
               <template v-slot:append-inner>
                 <v-fade-transition>
-                  <v-progress-circular v-if="loading" indeterminate size="18" width="2" color="#999"></v-progress-circular>
+                  <v-progress-circular v-if="loading" indeterminate size="18" width="2" color="#aaa"></v-progress-circular>
                 </v-fade-transition>
               </template>
             </v-text-field>
@@ -77,44 +91,46 @@
                   prepend-inner-icon="mdi-lock-open-variant-outline"
                 >
                   <template v-slot:append-inner>
-                    <v-tooltip text="copy" location="top"><template v-slot:activator="{ props }">
-                      <v-btn v-bind="props" icon="mdi-content-copy" variant="text" density="comfortable" size="small" @click="copy"></v-btn>
-                    </template></v-tooltip>
-                    <v-tooltip text="open" location="top"><template v-slot:activator="{ props }">
-                      <v-btn v-bind="props" icon="mdi-open-in-new" variant="text" density="comfortable" size="small" :href="result" target="_blank"></v-btn>
-                    </template></v-tooltip>
+                    <v-btn icon="mdi-content-copy" variant="text" density="comfortable" size="small" @click="copy" aria-label="copy"></v-btn>
+                    <v-btn icon="mdi-open-in-new" variant="text" density="comfortable" size="small" :href="result" target="_blank" aria-label="open"></v-btn>
                   </template>
                 </v-text-field>
-                <div class="text-caption mt-1" style="color:#444">{{ ms }}ms</div>
+                <div class="text-caption mt-1" style="color:#666">{{ ms }}ms</div>
               </div>
             </v-expand-transition>
 
             <v-expand-transition>
-              <v-alert v-if="err" type="error" variant="tonal" density="compact" class="mt-4 text-caption">{{ err }}</v-alert>
+              <v-alert v-if="err" type="error" variant="tonal" density="compact" class="mt-4 text-caption"
+                       style="background:#1a1210; border:1px solid #4a2c26">{{ err }}</v-alert>
             </v-expand-transition>
 
-            <div class="d-flex justify-center mt-5">
-              <v-btn
-                color="#4caf50"
-                class="text-white text-none font-weight-medium px-10"
-                height="42"
-                elevation="0"
-                :loading="loading"
-                :disabled="!url.trim()"
-                @click="crack"
-              >BYPASS</v-btn>
-            </div>
+            <v-divider class="mt-5 mb-4" style="border-color:#222"></v-divider>
+
+            <v-btn
+              color="#4caf50"
+              class="text-white text-none font-weight-medium"
+              block
+              height="44"
+              elevation="0"
+              rounded="lg"
+              :loading="loading"
+              :disabled="!url.trim()"
+              @click="crack"
+            >BYPASS</v-btn>
           </v-card-text>
         </v-card>
 
-        <v-sheet class="d-flex flex-wrap justify-center ga-x-5 ga-y-1 mt-10" color="transparent">
-          <span v-for="h in hosts" :key="h" class="text-caption" style="color:#3a3a3a">{{ h }}</span>
-        </v-sheet>
-        <div class="text-center text-caption mt-4" style="color:#2e2e2e">© 2026 kreatix.dev</div>
+        <div class="text-overline mt-8 mb-3" style="color:#777; letter-spacing:.1em">supported</div>
+        <div class="d-flex flex-wrap ga-2">
+          <v-chip v-for="h in hosts" :key="h" size="small" variant="outlined"
+                  style="border-color:#2c2c2c; color:#8a8a8a; font-size:11px">{{ h }}</v-chip>
+        </div>
+
+        <div class="text-center text-caption mt-8" style="color:#555">© 2026 kreatix.dev</div>
       </v-container>
     </v-main>
 
-    <v-snackbar v-model="snack" timeout="1600" location="bottom" color="#161616">copied</v-snackbar>
+    <v-snackbar v-model="snack" timeout="1600" location="bottom" color="#1c1c1c" rounded="lg">copied</v-snackbar>
   </v-app>
 </div>
 
@@ -127,7 +143,7 @@ const { createVuetify } = Vuetify;
 const vuetify = createVuetify({
   theme: {
     defaultTheme: 'dark',
-    themes: { dark: { dark: true, colors: { background: '#000', surface: '#0a0a0a', primary: '#4caf50' } } },
+    themes: { dark: { dark: true, colors: { background: '#000', surface: '#101010', primary: '#4caf50' } } },
   },
 });
 
@@ -145,9 +161,11 @@ createApp({
       { t: 'ad walls', s: 'linkvertise · lootlabs · work.ink · boost.ink · adfoc.us' },
       { t: 'social unlocks', s: 'rekonise · sub2unlock · sub4unlock · sub2get · subfinal · unlocknow · ytsubme · social-unlock · socialwolvez · mboost' },
       { t: 'pastes', s: 'pastebin · rentry · justpaste · paster.so/.gg · paste-drop · pastecanyon · pastehill · pastemode' },
-      { t: 'shorteners', s: 'bit.ly · tinyurl · t.co · is.gd · v.gd · tiny.cc · t.ly · rebrand.ly · rkns.link · shorter.me · cl.gy · goo.gl · tinylink.onl' },
+      { t: 'shorteners', s: 'bit.ly · tinyurl · t.co · is.gd · v.gd · tiny.cc · t.ly · rebrand.ly · rkns.link · shorter.me · cl.gy · tinylink.onl' },
     ];
-    const hosts = 'linkvertise · lootlabs · work.ink · rekonise · sub2unlock · sub4unlock · boost.ink · pastebin · rentry · bit.ly · tinyurl · t.co · is.gd'.split(' · ');
+    const hosts = ['linkvertise', 'lootlabs', 'work.ink', 'rekonise', 'sub2unlock', 'sub4unlock',
+                   'boost.ink', 'pastebin', 'rentry', 'justpaste', 'bit.ly', 'tinyurl', 't.co',
+                   'is.gd', 'v.gd', 'tiny.cc', 't.ly', 'rebrand.ly', 'shorter.me'];
 
     async function crack() {
       const u = url.value.trim();
@@ -181,7 +199,7 @@ createApp({
       snack.value = true;
     }
 
-    return { drawer, url, loading, result, err, errMsg: ref(''), ms, snack, groups, hosts, crack, copy };
+    return { drawer, url, loading, result, err, ms, snack, groups, hosts, crack, copy };
   },
 }).use(vuetify).mount('#app');
 </script>
