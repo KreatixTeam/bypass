@@ -26,7 +26,7 @@
   }
   .v-label.v-field-label { color:#9a9a9a !important; }
   .v-field input { font-size:16px; color:#eee; }
-  .v-field__input::placeholder, .v-field input::placeholder { color:#666 !important; opacity:1; }
+  .v-field__input::placeholder, .v-field input::placeholder { color:#8a8a8a !important; opacity:1; }
   .v-icon { color:#9a9a9a; }
 </style>
 </head>
@@ -43,26 +43,25 @@
 
     <v-navigation-drawer v-model="drawer" temporary color="#0d0d0d" style="border-right:1px solid #1e1e1e">
       <v-list density="compact" nav bg-color="transparent">
-        <v-list-subheader style="color:#777">SUPPORTED</v-list-subheader>
+        <v-list-subheader style="color:#888">SUPPORTED</v-list-subheader>
         <v-list-item v-for="g in groups" :key="g.t" :title="g.t" :subtitle="g.s"
-                     style="--v-list-subtitle-color:#555"></v-list-item>
+                     style="--v-list-subtitle-color:#8a8a8a"></v-list-item>
       </v-list>
     </v-navigation-drawer>
 
     <v-main>
       <v-container style="max-width:820px" class="py-6">
         <v-breadcrumbs :items="[{title:'kreatix', href:'https://kreatix.dev'}, {title:'bypass', disabled:true}]"
-                       class="pl-0 py-0 mb-4 text-caption" style="color:#777"></v-breadcrumbs>
+                       class="pl-0 py-0 mb-4 text-caption" style="color:#8a8a8a"></v-breadcrumbs>
 
         <v-card color="#101010" style="border:1px solid #2a2a2a; border-radius:12px" flat>
           <v-card-title class="text-subtitle-1 font-weight-medium pt-5 px-5">Crack a protected link</v-card-title>
-          <v-card-subtitle class="px-5 pb-0" style="color:#777">skips ads, timers and social-unlock walls</v-card-subtitle>
+          <v-card-subtitle class="px-5 pb-0" style="color:#8a8a8a">skips ads, timers and social-unlock walls</v-card-subtitle>
 
           <v-card-text class="pa-5">
             <v-text-field
               v-model="url"
-              label="Protected link"
-              placeholder="https://linkvertise.com/…"
+              placeholder="paste a protected link"
               variant="outlined"
               density="comfortable"
               hide-details="auto"
@@ -82,7 +81,6 @@
               <div v-if="result" class="mt-4">
                 <v-text-field
                   :model-value="result"
-                  label="Destination"
                   variant="outlined"
                   density="comfortable"
                   readonly
@@ -95,13 +93,13 @@
                     <v-btn icon="mdi-open-in-new" variant="text" density="comfortable" size="small" :href="result" target="_blank" aria-label="open"></v-btn>
                   </template>
                 </v-text-field>
-                <div class="text-caption mt-1" style="color:#666">{{ ms }}ms</div>
+                <div class="text-caption mt-1" style="color:#8a8a8a">{{ ms }}ms</div>
               </div>
             </v-expand-transition>
 
             <v-expand-transition>
               <v-alert v-if="err" type="error" variant="tonal" density="compact" class="mt-4 text-caption"
-                       style="background:#1a1210; border:1px solid #4a2c26">{{ err }}</v-alert>
+                       style="background:#1a1210; border:1px solid #4a2c26; color:#e8a097">{{ err }}</v-alert>
             </v-expand-transition>
 
             <v-divider class="mt-5 mb-4" style="border-color:#222"></v-divider>
@@ -120,13 +118,13 @@
           </v-card-text>
         </v-card>
 
-        <div class="text-overline mt-8 mb-3" style="color:#777; letter-spacing:.1em">supported</div>
+        <div class="text-overline mt-8 mb-3" style="color:#888; letter-spacing:.1em">supported</div>
         <div class="d-flex flex-wrap ga-2">
           <v-chip v-for="h in hosts" :key="h" size="small" variant="outlined"
                   style="border-color:#2c2c2c; color:#8a8a8a; font-size:11px">{{ h }}</v-chip>
         </div>
 
-        <div class="text-center text-caption mt-8" style="color:#555">© 2026 kreatix.dev</div>
+        <div class="text-center text-caption mt-8" style="color:#8a8a8a">© 2026 kreatix.dev</div>
       </v-container>
     </v-main>
 
