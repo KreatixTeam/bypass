@@ -227,40 +227,46 @@ def ws_wait_result(session, server, task, p_key, tid, session_id, page_origin, d
 
 
 # ---- turnstile minting via real browser -----------------------------------
+# playwright's sync api is bound to the thread/greenlet that started it, so a
+# persistent browser breaks across uvicorn's worker threads. spin up a fresh
+# instance per mint (serialized via _lock); ~2s extra launch cost per crack.
 
-_pw = None
-_browser = None
 _lock = threading.Lock()
 
 
-def _get_browser():
-    global _pw, _browser
-    if _browser is None:
-        from patchright.sync_api import sync_playwright
-        _pw = sync_playwright().start()
-        _browser = _pw.chromium.launch(headless=False)
-    return _browser
-
-
 def mint_turnstile(cap_url, timeout=60):
+    from patchright.sync_api import sync_playwright
     with _lock:
-        browser = _get_browser()
-        ctx = browser.new_context(viewport={"width": 800, "height": 700}, locale="en-US")
-        page = ctx.new_page()
+        pw = sync_playwright().start()
         try:
-            page.goto(cap_url, wait_until="domcontentloaded", timeout=30000)
-            deadline = time.time() + timeout
-            while time.time() < deadline:
-                token = page.evaluate(
-                    "() => window.TOKEN || document.querySelector('input[name=cf-turnstile-response]')?.value"
-                )
-                if token:
-                    return token
-                time.sleep(1.5)
-            return None
+            browser = pw.chromium.launch(headless=False)
+            try:
+                ctx = browser.new_context(viewport={"width": 800, "height": 700}, locale="en-US")
+                page = ctx.new_page()
+                try:
+                    page.goto(cap_url, wait_until="domcontentloaded", timeout=30000)
+                    deadline = time.time() + timeout
+                    while time.time() < deadline:
+                        token = page.evaluate(
+                            "() => window.TOKEN || document.querySelector('input[name=cf-turnstile-response]')?.value"
+                        )
+                        if token:
+                            return token
+                        time.sleep(1.5)
+                    return None
+                finally:
+                    try:
+                        ctx.close()
+                    except Exception:
+                        pass
+            finally:
+                try:
+                    browser.close()
+                except Exception:
+                    pass
         finally:
             try:
-                ctx.close()
+                pw.stop()
             except Exception:
                 pass
 
