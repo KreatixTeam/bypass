@@ -246,12 +246,28 @@ def mint_turnstile(cap_url, timeout=60):
                 try:
                     page.goto(cap_url, wait_until="domcontentloaded", timeout=30000)
                     deadline = time.time() + timeout
+                    clicked = False
                     while time.time() < deadline:
                         token = page.evaluate(
                             "() => window.TOKEN || document.querySelector('input[name=cf-turnstile-response]')?.value"
                         )
                         if token:
                             return token
+                        if not clicked:
+                            # datacenter IPs get the interactive checkbox — it never
+                            # auto-solves, so click it with real mouse coords. the
+                            # box sits ~28px from the left edge of the widget frame.
+                            try:
+                                el = page.wait_for_selector(
+                                    "iframe[src*='challenges.cloudflare.com'], .cf-turnstile iframe, iframe",
+                                    timeout=4000)
+                                if el:
+                                    box = el.bounding_box()
+                                    if box:
+                                        page.mouse.click(box["x"] + 28, box["y"] + box["height"] / 2)
+                                        clicked = True
+                            except Exception:
+                                clicked = True  # no widget iframe; keep polling anyway
                         time.sleep(1.5)
                     return None
                 finally:
