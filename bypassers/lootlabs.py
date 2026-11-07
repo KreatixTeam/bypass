@@ -234,7 +234,48 @@ def ws_wait_result(session, server, task, p_key, tid, session_id, page_origin, d
 _lock = threading.Lock()
 
 
-def mint_turnstile(cap_url, timeout=60):
+def _mint_via_capsolver(cap_url, sitekey, timeout):
+    """Turnstile tokens aren't IP-bound, so an external solve works fine —
+    needed on datacenter IPs where CF refuses the widget outright."""
+    import requests as rq
+    key = os.environ.get("CAPSOLVER_KEY")
+    if not key:
+        return None
+    r = rq.post("https://api.capsolver.com/createTask", json={
+        "clientKey": key,
+        "task": {"type": "AntiTurnstileTaskProxyLess", "websiteURL": cap_url,
+                 "websiteKey": sitekey, "metadata": {"action": "managed"}},
+    }, timeout=15).json()
+    tid_ = r.get("taskId")
+    if not tid_:
+        return None
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        time.sleep(2.5)
+        res = rq.post("https://api.capsolver.com/getTaskResult",
+                      json={"clientKey": key, "taskId": tid_}, timeout=15).json()
+        if res.get("status") == "ready":
+            return (res.get("solution") or {}).get("token")
+        if res.get("status") not in (None, "idle", "processing"):
+            return None
+    return None
+
+
+def mint_turnstile(cap_url, timeout=60, session=None):
+    sitekey = None
+    if os.environ.get("CAPSOLVER_KEY"):
+        try:
+            html = (session or make_session("challenges.cloudflare.com")).get(cap_url, timeout=10).text
+            sitekey = (re.search(r'sitekey="(0x[0-9a-zA-Z_-]+)"', html)
+                       or re.search(r'sitekey\s*[:=]\s*["\'](0x[0-9a-zA-Z_-]+)', html))
+            sitekey = sitekey.group(1) if sitekey else None
+        except Exception:
+            pass
+        if sitekey:
+            tok = _mint_via_capsolver(cap_url, sitekey, timeout)
+            if tok:
+                return tok
+
     from patchright.sync_api import sync_playwright
     with _lock:
         pw = sync_playwright().start()
@@ -379,7 +420,7 @@ def bypass(url, log=lambda m: None):
         if not str(cap_url).startswith("http"):
             cap_url = f"https://{syncer}/captcha?urid={urid}"
         log("minting turnstile")
-        token = mint_turnstile(cap_url)
+        token = mint_turnstile(cap_url, session=session)
         if not token:
             raise RuntimeError("turnstile mint failed")
         vrf = session.post(f"https://{syncer}/captcha/verify",
